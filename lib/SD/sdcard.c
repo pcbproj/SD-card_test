@@ -1148,7 +1148,7 @@ SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSiz
   * @param  addr: Address from where data are to be read.
   * @param  writebuff: pointer to the buffer that contain the data to be
   *   transferred.
-  * @param  BlockSize: the SD card Data block size.
+  * @param  BlockSize: the SD card Data block size in bytes.
   * @retval SD_Error: SD Card Error code.
   */
 SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize)
