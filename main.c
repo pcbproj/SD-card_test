@@ -4,8 +4,12 @@
 
 
 /*******************************************************************/
-uint32_t writeBuffer[4]; 
-uint32_t readBuffer[4];
+#define BUFFER_SIZE	4
+
+uint32_t writeBuffer[BUFFER_SIZE]; 
+uint32_t readBuffer[BUFFER_SIZE];
+
+
 SD_CardInfo SDCardInfo;
 
 
@@ -40,13 +44,15 @@ int main()
     SD_SelectDeselect((uint32_t) (SDCardInfo.RCA << 16));
     SD_SetDeviceMode(SD_POLLING_MODE);
     
-	printf("----- SD-card Block 512 byte writing! ---- \n");
+	printf("----- SD-card Block 512 bits writing! ---- \n");
     // И вот наконец-то запись и чтение
     SD_WriteBlock(0x00, writeBuffer, 512);
 
-	printf("----- SD-card Block 512 byte reading! ---- \n");
+	printf("----- SD-card Block 512 bits reading! ---- \n");
     SD_ReadBlock(0x00, readBuffer, 512);
 	
+	usart1_send_w32(readBuffer, BUFFER_SIZE);
+
 	
 	while(1)
 	{

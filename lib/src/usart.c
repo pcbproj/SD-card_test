@@ -110,6 +110,15 @@ void usart1_send(uint8_t data[], uint8_t len) {
 }
 
 
+void usart1_send_w32(uint32_t data_w32[], uint16_t len){
+	for( uint16_t i= 0; i < len; i++ ){	// data word selectcion
+		for( uint8_t j = 0; j < 32/8; j++ ){	// byte in word selection. first send LSB. Last send MSB/
+			uint32_t tx_byte = (( data_w32[i] >> ( j*8 )) & 0x000000FF);
+			USART1 -> DR = (uint8_t)tx_byte;
+			while ((USART1 -> SR & USART_SR_TXE) == 0){};
+		}
+	}
+}
 
 void usart2_send(uint8_t data[], uint8_t len) {
 	for (uint8_t i=0; i < len; i++){
