@@ -155,8 +155,8 @@ SD_Error SD_Init(void)
   SD_Error errorstatus = SD_OK;
 
   /* Configure SDIO interface GPIO */
-  GPIO_Configuration();
-  //SDIO_GPIO_Init();
+  //GPIO_Configuration();
+  SDIO_GPIO_Init();
 
   /* Enable the SDIO AHB Clock */
   //RCC_AHBPeriphClockCmd(RCC_AHBPeriph_SDIO, ENABLE);
@@ -164,8 +164,8 @@ SD_Error SD_Init(void)
 
 
   /* Enable the DMA2 Clock */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
-  //RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+  //RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_DMA2, ENABLE);
+  RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
 
 
   SDIO_DeInit();
@@ -1286,22 +1286,22 @@ SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize)
   SDIO_DataConfig(&SDIO_DataInitStructure);
 
   /* In case of single data block transfer no need of stop command at all */
-  if (DeviceMode == SD_POLLING_MODE)
+  if (DeviceMode == SD_POLLING_MODE)	// NOTE: with my card used this mode
   {
     while (!(SDIO->STA & (SDIO_FLAG_DBCKEND | SDIO_FLAG_TXUNDERR | SDIO_FLAG_DCRCFAIL | SDIO_FLAG_DTIMEOUT | SDIO_FLAG_STBITERR)))
     {
       if (SDIO_GetFlagStatus(SDIO_FLAG_TXFIFOHE) != RESET)
       {
-        if ((TotalNumberOfBytes - bytestransferred) < 32)
+        if ((TotalNumberOfBytes - bytestransferred) < 32)	// send last 8 words	
         {
           restwords = ((TotalNumberOfBytes - bytestransferred) % 4 == 0) ? ((TotalNumberOfBytes - bytestransferred) / 4) : (( TotalNumberOfBytes -  bytestransferred) / 4 + 1);
 
           for (count = 0; count < restwords; count++, tempbuff++, bytestransferred += 4)
           {
-            SDIO_WriteData(*tempbuff);
+            SDIO_WriteData(*tempbuff);	
           }
         }
-        else
+        else		// write by 8 words in SDIO->FIFO for sending into SD-card
         {
           for (count = 0; count < 8; count++)
           {
@@ -2849,17 +2849,20 @@ static void GPIO_Configuration(void)
 
 
    //Configure PC.08, PC.09, PC.10, PC.11, PC.12 pin: D0, D1, D2, D3, CLK pin 
+  
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_12;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  //GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOC, &GPIO_InitStructure);
 
    //Configure PD.02 CMD line 
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIO_Init(GPIOD, &GPIO_InitStructure);
+  
+	
 
 
+/*
   RCC_APB2PeriphClockCmd( RCC_APB2Periph_USART1 | RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB |RCC_AHB1Periph_GPIOD |
                          RCC_AHB1Periph_GPIOE, ENABLE);
 
@@ -2884,11 +2887,12 @@ static void GPIO_Configuration(void)
   GPIO_Init(GPIOA, &GPIO_InitStructure);		         //A 
 
   GPIO_SetBits(GPIOC, GPIO_Pin_9| GPIO_Pin_10 | GPIO_Pin_11 ); 		    //D1 D2 D3
+  */
 }
 
 
 
-/*
+
 void SDIO_GPIO_Init(void){
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
 	RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
@@ -2931,7 +2935,7 @@ void SDIO_GPIO_Init(void){
 	SDIO_PORT -> AFR[1] |= ( 12 << ( (SDIO_CLK_PIN_NUM - 8)*4 ) );
 	SDIO_CMD_PORT -> AFR[0] |= ( 12 << ( (SDIO_CMD_PIN_NUM)*4 ) );
 }
-*/
+
 
 
 // TODO: Rewrite DMA_TxConfiguration() for STM32F407 SDIO 
@@ -2977,7 +2981,8 @@ static void DMA_TxConfiguration(uint32_t *BufferSRC, uint32_t BufferSize)
 	DMA2_Stream6->CR  &= ~(DMA_SxCR_EN);               // Выключение потока 0 
 	                                                   // 000: channel 0 selected
 	DMA2_Stream6->CR  |= DMA_SxCR_DIR_0;               // 10: Memory-to-peripheral
-	DMA2_Stream6->PAR  = (uint32_t)SDIO_FIFO_Address;       // Адрес памяти Peripheral IN
+	//DMA2_Stream6->PAR  = (uint32_t)SDIO_FIFO_Address;       // Адрес Peripheral IN
+	DMA2_Stream6->PAR  = (uint32_t)SDIO->FIFO;       // Адрес Peripheral IN
 	DMA2_Stream6->M0AR = (uint32_t)BufferSRC;          // Адрес памяти Memory OUT
 	//DMA2_Stream6->CR |= (4 << DMA_SxCR_CHSEL_Pos);     // 100: Channel 4 selected
 	DMA2_Stream6->CR |= (DMA_SxCR_CHSEL_2);				// 100: Channel 4 selected
