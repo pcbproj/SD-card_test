@@ -65,9 +65,10 @@ int main()
     	SD_WriteBlock(0x00000000, writeBuffer, SD_BLOCK_SIZE_BYTES);
 		
 		printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE*4);
-    	SD_ReadBlock(0x00000000, readBuffer, SD_BLOCK_SIZE_BYTES);
+		SD_ErrorState = SD_ReadBlock(0x00000000, readBuffer, SD_BLOCK_SIZE_BYTES);
 		
-		usart1_send_w32(readBuffer, BUFFER_SIZE);
+		if(SD_ErrorState == SD_OK) usart1_send_w32(readBuffer, BUFFER_SIZE);
+		else printf("----- SD-card reading error! ----- \n");
 	}
 	else{
 		printf("----- SD-card not found!! ---- \n");
