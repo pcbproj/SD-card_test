@@ -102,8 +102,8 @@ void USART6_Init(void){
 
 
 
-void usart1_send(uint8_t data[], uint8_t len) {
-	for (uint8_t i=0; i < len; i++){
+void usart1_send(uint8_t data[], uint16_t len) {
+	for (uint16_t i=0; i < len; i++){
 		USART1 -> DR = data[i];
 		while ((USART1 -> SR & USART_SR_TXE) == 0){};
 	}

@@ -38,7 +38,6 @@
 #define NULL 0
 #define SDIO_STATIC_FLAGS               ((uint32_t)0x000005FF)
 #define SDIO_CMD0TIMEOUT                ((uint32_t)0x00002710)
-//#define SDIO_FIFO_Address               ((uint32_t)0x40018080)	// 0x40018000 - SDIO STM32F10x memory map start
 #define SDIO_FIFO_Address               ((uint32_t)0x40012C80)		// ( 0x40012C00 + 0x80 ) - SDIO STM32F407 memory map start + SDIO_FIFO_REG_OFFSET
 	
 																
@@ -143,6 +142,41 @@ static void DMA_TxConfiguration(uint32_t *BufferSRC, uint32_t BufferSize);
 static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize);
 
 /* Private functions ---------------------------------------------------------*/
+
+void ConvertArray_W32_to_B8(uint32_t *array_32, uint8_t *array_8, uint16_t WordsNumber){
+	for(uint16_t j = 0; j < WordsNumber; j++){
+		uint32_t word = *(array_32 + j);
+		*(array_8 + (j*4)) = word & 0x000000FF;
+		*(array_8 + (j*4) + 1) = (word & 0x0000FF00) >> 8;
+		*(array_8 + (j*4) + 2) = (word & 0x00FF0000) >> 16;
+		*(array_8 + (j*4) + 3) = (word & 0xFF000000) >> 24;
+	}
+}
+
+
+void ConvertArray_B8_to_W32(uint8_t *array_8, uint32_t *array_32, uint16_t BytesNumber){
+	uint16_t WORDS_NUMBER = BytesNumber / 4; 
+
+	for (uint16_t m = 0; m < WORDS_NUMBER; m++){
+		
+		/* LSB bytes orientation*/
+		/* *(array_32 + m) = (array_8[m*4] << 24) + 
+						(array_8[m*4 + 1] << 16) +
+						(array_8[m*4 + 2] << 8) +
+						(array_8[m*4 + 3]);
+		
+		*/
+		/* MSB bytes orientation*/	
+				
+		*(array_32 + m) = (array_8[m*4]) + 
+						(array_8[m*4 + 1] << 8) +
+						(array_8[m*4 + 2] << 16) +
+						(array_8[m*4 + 3] << 24);
+		
+	}
+
+}
+
 
 /**
   * @brief  Initializes the SD Card and put it into StandBy State (Ready 
@@ -768,6 +802,25 @@ SD_Error SD_SelectDeselect(uint32_t addr)
   return(errorstatus);
 }
 
+
+
+SD_Error SD_ReadBlockBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t BlockSizeBytes){
+	
+	uint16_t WordsNumber = BlockSizeBytes / 4;
+	uint32_t readbuff[WordsNumber];
+	SD_Error errorstatus = SD_OK;
+
+	errorstatus = SD_ReadBlock(addr, readbuff, BlockSizeBytes);
+	if(errorstatus == SD_OK){
+		ConvertArray_W32_to_B8(readbuff, readbuff_bytes, WordsNumber);
+	}
+
+	return errorstatus;
+}
+
+
+
+// TODO: Add conversion from 32-bit word into byte.  First try MSB first (big endian)
 /**
   * @brief  Allows to read one block from a specified address in a card.
   * @param  addr: Address from where data are to be read.
@@ -933,6 +986,8 @@ SD_Error SD_ReadBlock(uint32_t addr, uint32_t *readbuff, uint16_t BlockSize)
     while (DMA_GetFlagStatus(DMA2_Stream6, DMA_FLAG_TCIF4) == RESET)
     {}
   }
+
+
   return(errorstatus);
 }
 
@@ -1142,6 +1197,21 @@ SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSiz
   return(errorstatus);
 }
 
+
+SD_Error SD_WriteBlockBytes(uint32_t addr, uint8_t *writebuff_bytes, uint16_t BlockSizeBytes){
+	SD_Error errorstatus = SD_OK;
+	uint32_t writebuff[BlockSizeBytes / 4];
+
+	ConvertArray_B8_to_W32(writebuff_bytes, writebuff, BlockSizeBytes);
+	
+	errorstatus = SD_WriteBlock(addr, writebuff, BlockSizeBytes);
+
+	return errorstatus;
+
+}
+
+
+// TODO: Add conversion from 8-bit into 32-bit word. First try MSB first (big endian)
 /**
   * @brief  Allows to write one block starting from a specified address 
   *   in a card.
@@ -2832,7 +2902,6 @@ static uint8_t convert_from_bytes_to_power_of_two(uint16_t NumberOfBytes)
 }
 
 
-//TODO: Rewrite GPIO_Configuration() function with CMSIS for my MCU pinout: SDIO, USART1,  
 /**
   * @brief  Configures the SDIO Corresponding GPIO Ports
   * @param  None
@@ -2858,36 +2927,7 @@ static void GPIO_Configuration(void)
    //Configure PD.02 CMD line 
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIO_Init(GPIOD, &GPIO_InitStructure);
-  
-	
 
-
-/*
-  RCC_APB2PeriphClockCmd( RCC_APB2Periph_USART1 | RCC_AHB1Periph_GPIOA | RCC_AHB1Periph_GPIOB |RCC_AHB1Periph_GPIOD |
-                         RCC_AHB1Periph_GPIOE, ENABLE);
-
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;				     //LED1  V6
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);					 
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6|GPIO_Pin_3;		 //LED2, LED3	 V7 V8
-  GPIO_Init(GPIOD, &GPIO_InitStructure);
-  
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9| GPIO_Pin_10 | GPIO_Pin_11 ;	
-  GPIO_Init(GPIOC, &GPIO_InitStructure);	
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;	         //USART1 TX
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;    //
-  GPIO_Init(GPIOA, &GPIO_InitStructure);		    //A 
-
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;	         //USART1 RX
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;   //
-  GPIO_Init(GPIOA, &GPIO_InitStructure);		         //A 
-
-  GPIO_SetBits(GPIOC, GPIO_Pin_9| GPIO_Pin_10 | GPIO_Pin_11 ); 		    //D1 D2 D3
-  */
 }
 
 

@@ -4,13 +4,16 @@
 
 
 /*******************************************************************/
-#define BUFFER_SIZE				64 // ascii table in 23-bit words length
+#define BUFFER_SIZE		(uint16_t)64 // ascii table in 32-bit words length
 
-#define SD_BLOCK_SIZE_BYTES		512
+
 
 
 uint32_t writeBuffer[BUFFER_SIZE]; 
 uint32_t readBuffer[BUFFER_SIZE];
+
+uint8_t readData_8[BUFFER_SIZE * 4];
+uint8_t writeBuffer_bytes[BUFFER_SIZE * 4];
 
 
 
@@ -43,6 +46,10 @@ int main()
 		readBuffer[i] = 0;
     }	
 
+	for (uint16_t i = 0; i < BUFFER_SIZE*4; i++){
+		writeBuffer_bytes[i] = (i + chr);
+	}
+
 	printf("---- System started! ---- \n");
 
 	printf("----- SD-card initialization started! ---- \n");
@@ -61,13 +68,18 @@ int main()
     	SD_SetDeviceMode(SD_POLLING_MODE);
     	
 		printf("----- SD-card Block %d bytes writing! ---- \n", BUFFER_SIZE*4);
-    	// И вот наконец-то запись и чтение
-    	SD_WriteBlock(0x00000000, writeBuffer, SD_BLOCK_SIZE_BYTES);
+    	// запись блока данных
+    	//SD_WriteBlockBytes(0x00000000, writeBuffer_bytes, SD_BLOCK_SIZE_BYTES);
+		
+		//disk_write (0, writeBuffer_bytes, 0x00000000, 1);
 		
 		printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE*4);
-		SD_ErrorState = SD_ReadBlock(0x00000000, readBuffer, SD_BLOCK_SIZE_BYTES);
+		// чтение блока данных
+		//SD_ErrorState = SD_ReadBlockBytes(0x00000000, readData_8, SD_BLOCK_SIZE_BYTES);
+		disk_read(0, readData_8, 0x00000000, 1);
+
 		
-		if(SD_ErrorState == SD_OK) usart1_send_w32(readBuffer, BUFFER_SIZE);
+		if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE*4);
 		else printf("----- SD-card reading error! ----- \n");
 	}
 	else{

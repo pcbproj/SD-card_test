@@ -47,7 +47,7 @@
       target_reset_script="Reset();" />
     <configuration
       Name="Debug"
-      c_user_include_directories=".;$(ProjectDir)/lib/inc/;$(ProjectDir)/lib/SD/;$(ProjectDir)/lib/STM32F4XX_SPL/inc/"
+      c_user_include_directories=".;$(ProjectDir)/lib/inc/;$(ProjectDir)/lib/SD/;$(ProjectDir)/lib/STM32F4XX_SPL/inc/;$(ProjectDir)/lib/fatfs/"
       debug_target_connection="GDB Server"
       gdb_server_allow_memory_access_during_execution="Yes"
       gdb_server_autostart_server="No"
@@ -67,6 +67,16 @@
       </file>
     </folder>
     <folder Name="lib">
+      <folder Name="fatfs">
+        <file file_name="lib/fatfs/diskio.c" />
+        <file file_name="lib/fatfs/diskio.h" />
+        <file file_name="lib/fatfs/ff.c" />
+        <file file_name="lib/fatfs/ff.h" />
+        <file file_name="lib/fatfs/ffconf.h" />
+        <file file_name="lib/fatfs/ffsystem.c" />
+        <file file_name="lib/fatfs/ffunicode.c" />
+        <file file_name="lib/fatfs/integer.h" />
+      </folder>
       <folder Name="inc">
         <file file_name="lib/inc/delay.h" />
         <file file_name="lib/inc/gpio.h" />

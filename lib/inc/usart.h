@@ -22,7 +22,7 @@ void USART6_Init(void);
 
 // TODO: написать функцию usart_send() чтобы можно было выбирать порт USART
 
-void usart1_send(uint8_t data[], uint8_t len);
+void usart1_send(uint8_t data[], uint16_t len);
 void usart2_send(uint8_t data[], uint8_t len);
 void usart6_send(uint8_t data[], uint8_t len);
 

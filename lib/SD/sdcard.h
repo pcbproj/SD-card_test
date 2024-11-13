@@ -251,8 +251,7 @@ typedef struct
 #define SDIO_SECURE_DIGITAL_IO_COMBO_CARD  ((uint32_t)0x6)
 #define SDIO_HIGH_CAPACITY_MMC_CARD        ((uint32_t)0x7)
 
-
-//Configure PC.08, PC.09, PC.10, PC.11, PC.12 pin: D0, D1, D2, D3, CLK pin
+#define SD_BLOCK_SIZE_BYTES		512
 
 #define SDIO_PORT			GPIOC
 #define SDIO_CMD_PORT		GPIOD
@@ -269,7 +268,7 @@ typedef struct
 
 #define SD_CD_CHECK()	( SD_CD_PORT->IDR & ( 1 << SD_CD_PIN_NUM) )
 
-void SDIO_GPIO_Init(void); // SDCard GPIO init
+
 
 
 
@@ -277,6 +276,9 @@ void SDIO_GPIO_Init(void); // SDCard GPIO init
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 SD_Error SD_Init(void);
+
+void SDIO_GPIO_Init(void); // SDCard GPIO init
+
 SD_Error SD_PowerON(void);
 SD_Error SD_PowerOFF(void);
 SD_Error SD_InitializeCards(void);
@@ -284,9 +286,16 @@ SD_Error SD_GetCardInfo(SD_CardInfo *cardinfo);
 SD_Error SD_EnableWideBusOperation(uint32_t WideMode);
 SD_Error SD_SetDeviceMode(uint32_t Mode);
 SD_Error SD_SelectDeselect(uint32_t addr);
+
 SD_Error SD_ReadBlock(uint32_t addr, uint32_t *readbuff, uint16_t BlockSize);
+SD_Error SD_ReadBlockBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t BlockSizeBytes);
+
+
 SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSize, uint32_t NumberOfBlocks);
+
 SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize);
+SD_Error SD_WriteBlockBytes(uint32_t addr, uint8_t *writebuff_bytes, uint16_t BlockSizeBytes);
+
 SD_Error SD_WriteMultiBlocks(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize, uint32_t NumberOfBlocks);
 SDTransferState SD_GetTransferState(void);
 SD_Error SD_StopTransfer(void);
@@ -294,6 +303,10 @@ SD_Error SD_Erase(uint32_t startaddr, uint32_t endaddr);
 SD_Error SD_SendStatus(uint32_t *pcardstatus);
 SD_Error SD_SendSDStatus(uint32_t *psdstatus);
 SD_Error SD_ProcessIRQSrc(void);
+
+void ConvertArray_W32_to_B8(uint32_t *array_32, uint8_t *array_8, uint16_t WordsNumber);
+void ConvertArray_B8_to_W32(uint8_t *array_8, uint32_t *array_32, uint16_t BytesNumber);
+
 
 
 
