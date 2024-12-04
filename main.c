@@ -4,16 +4,18 @@
 
 
 /*******************************************************************/
-#define BUFFER_SIZE		(uint16_t)64 // ascii table in 32-bit words length
+//#define BUFFER_SIZE_BYTES		(uint16_t)512 // ascii table in bytes length
+#define BUFFER_SIZE_BYTES		(uint16_t)2048 // ascii table in bytes length
 
+#define READED_BYTES			(uint16_t)512
+#define START_SECTOR_NUM		(uint32_t)4
+#define SECTORS_QUANTITY		(uint16_t)2
 
+uint8_t readData_8[BUFFER_SIZE_BYTES];
+uint8_t writeBuffer_bytes[BUFFER_SIZE_BYTES];
 
-
-uint32_t writeBuffer[BUFFER_SIZE]; 
-uint32_t readBuffer[BUFFER_SIZE];
-
-uint8_t readData_8[BUFFER_SIZE * 4];
-uint8_t writeBuffer_bytes[BUFFER_SIZE * 4];
+uint32_t start_sector_num = 3;
+uint16_t sectors_number = 1;
 
 
 
@@ -35,19 +37,22 @@ int main()
 	
 
 	// Тестовые данные для записи
-    for (uint16_t i = 0; i < BUFFER_SIZE; i++)
-    {
-		uint32_t temp_word = 0;
-		for (uint8_t byte_num = 0; byte_num < 4; byte_num++){
-			temp_word |= ( chr << ( byte_num*8 ) );
-			chr++;
-		}
-		writeBuffer[i] = temp_word;
-		readBuffer[i] = 0;
-    }	
+  //  for (uint16_t i = 0; i < BUFFER_SIZE_BYTES; i++)
+  //  {
+		//uint32_t temp_word = 0;
+		//for (uint8_t byte_num = 0; byte_num < 4; byte_num++){
+		//	temp_word |= ( chr << ( byte_num*8 ) );
+		//	chr++;
+		//}
+		//writeBuffer[i] = temp_word;
+		//readBuffer[i] = 0;
+  //  }	
 
-	for (uint16_t i = 0; i < BUFFER_SIZE*4; i++){
-		writeBuffer_bytes[i] = (i + chr);
+	for (uint16_t i = 0; i < BUFFER_SIZE_BYTES; i++){
+		//writeBuffer_bytes[i] = (i + chr);
+		//if( i < 256) writeBuffer_bytes[i] = i;
+		//else writeBuffer_bytes[i] = (i - 256);
+		writeBuffer_bytes[i] = (i & 0x00FF);	// take LSB only.
 	}
 
 	printf("---- System started! ---- \n");
@@ -67,19 +72,16 @@ int main()
     	SD_SelectDeselect((uint32_t) (SDCardInfo.RCA << 16));
     	SD_SetDeviceMode(SD_POLLING_MODE);
     	
-		printf("----- SD-card Block %d bytes writing! ---- \n", BUFFER_SIZE*4);
+		//printf("----- SD-card Block %d bytes writing! ---- \n", BUFFER_SIZE_BYTES);
     	// запись блока данных
-    	//SD_WriteBlockBytes(0x00000000, writeBuffer_bytes, SD_BLOCK_SIZE_BYTES);
+		//disk_write(0, writeBuffer_bytes, START_SECTOR_NUM, SECTORS_QUANTITY); 
 		
-		disk_write (2, writeBuffer_bytes, 0x00000000, 1); // ERROR in writing/ Always writes in sector 0
-		
-		printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE*4);
+		printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE_BYTES);
 		// чтение блока данных
-		//SD_ErrorState = SD_ReadBlockBytes(0x00000000, readData_8, SD_BLOCK_SIZE_BYTES);
-		//disk_read(0, readData_8, 0x01, 1);
+		disk_read(0, readData_8, 65544, 4);
 
 		
-		if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE*4);
+		if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE_BYTES);
 		else printf("----- SD-card reading error! ----- \n");
 	}
 	else{

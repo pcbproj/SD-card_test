@@ -1,0 +1,74 @@
+//printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE_BYTES);
+//SD_ErrorState = SD_ReadBlockBytes(0x00000000, readData_8, SD_BLOCK_SIZE_BYTES);
+//disk_read(0, readData_8, 0x01, 1);
+//if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE_BYTES);
+//else printf("----- SD-card reading error! ----- \n");
+/* Write Sector(s)                                                       */
+/*-----------------------------------------------------------------------*/
+/**
+  * @brief  Writes Sector(s)
+  * @param  pdrv: Physical drive number (0..)
+  * @param  *buff: Data to be written
+  * @param  sector: Sector address (LBA)
+  * @param  count: Number of sectors to write (1..128)
+  * @retval DRESULT: Operation result
+  */
+DRESULT disk_write (
+	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
+	const BYTE *buff,	/* Data to be written */ // 
+	DWORD sector,		/* 512-bytes block number in LBA */
+	UINT count			/* Number of sectors to write */
+)
+{
+	SD_Error errorstatus = SD_OK;
+	if(count > 1){
+        errorstatus = SD_WriteMultiBlockBytes(sector, buff, SD_BLOCK_SIZE_BYTES, count);
+        if(errorstatus != SD_OK) {
+            return RES_ERROR;
+        }
+    }
+	else{
+		if(count == 1) {
+			errorstatus = SD_WriteBlockBytes(sector, buff, SD_BLOCK_SIZE_BYTES);
+    	    if(errorstatus != SD_OK) {
+    	        return RES_ERROR;
+    	    }
+		}
+	}
+
+    if(errorstatus != SD_OK) {
+        return RES_ERROR;
+    }
+
+    return RES_OK;
+}
+
+/*-----------------------------------------------------------------------*/
+/* Miscellaneous Functions                                               */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_ioctl (
+	BYTE pdrv,		/* Physical drive nmuber (0..) */
+	BYTE cmd,		/* Control code */
+	void *buff		/* Buffer to send/receive control data */
+)
+{
+	if(cmd == CTRL_SYNC) {
+		return RES_OK;
+	} else {
+		// should never be called
+		return RES_ERROR;
+	}
+}
+
+/**
+  * @brief  Gets Time from RTC 
+  * @param  None
+  * @retval Time in DWORD
+  */
+
+/*
+DWORD get_fattime(void)
+{
+  return 0;
+}
