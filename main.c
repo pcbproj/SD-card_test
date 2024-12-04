@@ -71,12 +71,12 @@ int main()
     	// запись блока данных
     	//SD_WriteBlockBytes(0x00000000, writeBuffer_bytes, SD_BLOCK_SIZE_BYTES);
 		
-		//disk_write (0, writeBuffer_bytes, 0x00000000, 1);
+		disk_write (2, writeBuffer_bytes, 0x00000000, 1); // ERROR in writing/ Always writes in sector 0
 		
 		printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE*4);
 		// чтение блока данных
 		//SD_ErrorState = SD_ReadBlockBytes(0x00000000, readData_8, SD_BLOCK_SIZE_BYTES);
-		disk_read(0, readData_8, 0x00000000, 1);
+		//disk_read(0, readData_8, 0x01, 1);
 
 		
 		if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE*4);

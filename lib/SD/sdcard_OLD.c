@@ -144,8 +144,6 @@ static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize);
 /* Private functions ---------------------------------------------------------*/
 
 void ConvertArray_W32_to_B8(uint32_t *array_32, uint8_t *array_8, uint16_t WordsNumber){
-
-	//====== LSB bytes orientation ==========
 	for(uint16_t j = 0; j < WordsNumber; j++){
 		uint32_t word = *(array_32 + j);
 		*(array_8 + (j*4)) = word & 0x000000FF;
@@ -153,19 +151,6 @@ void ConvertArray_W32_to_B8(uint32_t *array_32, uint8_t *array_8, uint16_t Words
 		*(array_8 + (j*4) + 2) = (word & 0x00FF0000) >> 16;
 		*(array_8 + (j*4) + 3) = (word & 0xFF000000) >> 24;
 	}
-
-
-/*
-	//====== MSB bytes orientation (wrong bytes sequence) =======
-	for(uint16_t j = 0; j < WordsNumber; j++){
-		uint32_t word = *(array_32 + j);
-		*(array_8 + (j*4) + 3) = word & 0x000000FF;
-		*(array_8 + (j*4) + 2) = (word & 0x0000FF00) >> 8;
-		*(array_8 + (j*4) + 1) = (word & 0x00FF0000) >> 16;
-		*(array_8 + (j*4)) = (word & 0xFF000000) >> 24;
-	}
-*/
-
 }
 
 
@@ -174,15 +159,15 @@ void ConvertArray_B8_to_W32(uint8_t *array_8, uint32_t *array_32, uint16_t Bytes
 
 	for (uint16_t m = 0; m < WORDS_NUMBER; m++){
 		
-		/* MSB bytes orientation (wrong bytes sequence)*/
-		 //*(array_32 + m) = (array_8[m*4] << 24) + 
-			//			(array_8[m*4 + 1] << 16) +
-			//			(array_8[m*4 + 2] << 8) +
-			//			(array_8[m*4 + 3]);
+		/* LSB bytes orientation*/
+		/* *(array_32 + m) = (array_8[m*4] << 24) + 
+						(array_8[m*4 + 1] << 16) +
+						(array_8[m*4 + 2] << 8) +
+						(array_8[m*4 + 3]);
 		
-		
-		
-		/* LSB bytes orientation */	
+		*/
+		/* MSB bytes orientation*/	
+				
 		*(array_32 + m) = (array_8[m*4]) + 
 						(array_8[m*4 + 1] << 8) +
 						(array_8[m*4 + 2] << 16) +
@@ -255,6 +240,7 @@ SD_Error SD_Init(void)
   * @retval SD_Error: SD Card Error code.
   */
 
+  //TODO: review and rewrite SD_PowerON() with CMSIS for my MCU STM32F407 HCLK = 168 MHz
 SD_Error SD_PowerON(void)
 {
   SD_Error errorstatus = SD_OK;
@@ -834,23 +820,7 @@ SD_Error SD_ReadBlockBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t Bloc
 
 
 
-SD_Error SD_ReadMultiBlocksBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t BlockSize, uint32_t NumberOfBlocks){
-	uint16_t WordsNumber = BlockSize / 4;
-	uint32_t readbuff[WordsNumber * NumberOfBlocks];
-	SD_Error errorstatus = SD_OK;
-	
-	errorstatus = SD_ReadMultiBlocks(addr, readbuff, BlockSize, NumberOfBlocks);
-	
-	if(errorstatus == SD_OK){
-		ConvertArray_W32_to_B8(readbuff, readbuff_bytes, ( WordsNumber * NumberOfBlocks));
-	}
-
-	return errorstatus;
-
-
-}
-
-
+// TODO: Add conversion from 32-bit word into byte.  First try MSB first (big endian)
 /**
   * @brief  Allows to read one block from a specified address in a card.
   * @param  addr: Address from where data are to be read.
@@ -894,7 +864,7 @@ SD_Error SD_ReadBlock(uint32_t addr, uint32_t *readbuff, uint16_t BlockSize)
   if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
   {
     BlockSize = 512;
-    //addr /= 512;
+    addr /= 512;
   }
   if ((BlockSize > 0) && (BlockSize <= 2048) && ((BlockSize & (BlockSize - 1)) == 0))
   {
@@ -1021,9 +991,6 @@ SD_Error SD_ReadBlock(uint32_t addr, uint32_t *readbuff, uint16_t BlockSize)
   return(errorstatus);
 }
 
-
-
-
 /**
   * @brief  Allows to read blocks from a specified address  in a card.
   * @param  addr: Address from where data are to be read.
@@ -1068,7 +1035,7 @@ SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSiz
   if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
   {
     BlockSize = 512;
-    //addr /= 512;
+    addr /= 512;
   }
   
   if ((BlockSize > 0) && (BlockSize <= 2048) && (0 == (BlockSize & (BlockSize - 1))))
@@ -1231,7 +1198,7 @@ SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSiz
 }
 
 
-SD_Error SD_WriteBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint16_t BlockSizeBytes){
+SD_Error SD_WriteBlockBytes(uint32_t addr, uint8_t *writebuff_bytes, uint16_t BlockSizeBytes){
 	SD_Error errorstatus = SD_OK;
 	uint32_t writebuff[BlockSizeBytes / 4];
 
@@ -1244,6 +1211,7 @@ SD_Error SD_WriteBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint1
 }
 
 
+// TODO: Add conversion from 8-bit into 32-bit word. First try MSB first (big endian)
 /**
   * @brief  Allows to write one block starting from a specified address 
   *   in a card.
@@ -1289,7 +1257,7 @@ SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize)
   if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
   {
     BlockSize = 512;
-    //addr /= 512;
+    addr /= 512;
   }
   
   /* Set the block size, both on controller and card */
@@ -1479,27 +1447,6 @@ SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize)
   return(errorstatus);
 }
 
-
-
-
-
-
-SD_Error SD_WriteMultiBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint16_t BlockSize, uint32_t NumberOfBlocks){
-	SD_Error errorstatus = SD_OK;
-	uint32_t writebuff[ (BlockSize * NumberOfBlocks) / 4 ];
-	
-
-	ConvertArray_B8_to_W32(writebuff_bytes, writebuff, (BlockSize*NumberOfBlocks) );
-
-	errorstatus = SD_WriteMultiBlocks(addr, writebuff, BlockSize, NumberOfBlocks);
-	return errorstatus;
-}
-
-
-
-
-
-
 /**
   * @brief  Allows to write blocks starting from a specified address in 
   *   a card.
@@ -1546,7 +1493,7 @@ SD_Error SD_WriteMultiBlocks(uint32_t addr, uint32_t *writebuff, uint16_t BlockS
   if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
   {
     BlockSize = 512;
-    //addr /= 512;
+    addr /= 512;
   }
   
   /* Set the block size, both on controller and card */
@@ -1845,8 +1792,8 @@ SD_Error SD_Erase(uint32_t startaddr, uint32_t endaddr)
 
   if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
   {
-    //startaddr /= 512;
-    //endaddr /= 512;
+    startaddr /= 512;
+    endaddr /= 512;
   }
   
   /* According to sd-card spec 1.0 ERASE_GROUP_START (CMD32) and erase_group_end(CMD33) */

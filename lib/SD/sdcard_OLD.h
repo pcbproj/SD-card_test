@@ -292,15 +292,11 @@ SD_Error SD_ReadBlockBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t Bloc
 
 
 SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSize, uint32_t NumberOfBlocks);
-SD_Error SD_ReadMultiBlocksBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t BlockSize, uint32_t NumberOfBlocks);
 
 SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize);
-SD_Error SD_WriteBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint16_t BlockSizeBytes);
-
+SD_Error SD_WriteBlockBytes(uint32_t addr, uint8_t *writebuff_bytes, uint16_t BlockSizeBytes);
 
 SD_Error SD_WriteMultiBlocks(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize, uint32_t NumberOfBlocks);
-SD_Error SD_WriteMultiBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint16_t BlockSize, uint32_t NumberOfBlocks);
-
 SDTransferState SD_GetTransferState(void);
 SD_Error SD_StopTransfer(void);
 SD_Error SD_Erase(uint32_t startaddr, uint32_t endaddr);
