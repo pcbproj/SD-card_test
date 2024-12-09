@@ -308,8 +308,6 @@ SD_Error SD_SendStatus(uint32_t *pcardstatus);
 SD_Error SD_SendSDStatus(uint32_t *psdstatus);
 SD_Error SD_ProcessIRQSrc(void);
 
-void ConvertArray_W32_to_B8(uint32_t *array_32, uint8_t *array_8, uint16_t WordsNumber);
-void ConvertArray_B8_to_W32(uint8_t *array_8, uint32_t *array_32, uint16_t BytesNumber);
 
 
 

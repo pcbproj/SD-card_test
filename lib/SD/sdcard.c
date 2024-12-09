@@ -104,9 +104,7 @@
    SDIO_APP_CMD should be sent before sending these commands. */
 #define SDIO_SEND_IF_COND               ((uint32_t)0x00000008)
 
-//#define SDIO_INIT_CLK_DIV                  ((uint8_t)0xB2)
 #define SDIO_INIT_CLK_DIV                  ((uint8_t)208)
-//#define SDIO_TRANSFER_CLK_DIV              ((uint8_t)0x1) 
 #define SDIO_TRANSFER_CLK_DIV              ((uint8_t)0x2) 
 
 
@@ -137,60 +135,14 @@ static SD_Error SDEnWideBus(FunctionalState NewState);
 static SD_Error IsCardProgramming(uint8_t *pstatus);
 static SD_Error FindSCR(uint16_t rca, uint32_t *pscr);
 static uint8_t convert_from_bytes_to_power_of_two(uint16_t NumberOfBytes);
-static void GPIO_Configuration(void);
+//static void GPIO_Configuration(void);
 static void DMA_TxConfiguration(uint32_t *BufferSRC, uint32_t BufferSize);
 static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize);
 
 /* Private functions ---------------------------------------------------------*/
 
-void ConvertArray_W32_to_B8(uint32_t *array_32, uint8_t *array_8, uint16_t WordsNumber){
-
-	//====== LSB bytes orientation ==========
-	for(uint16_t j = 0; j < WordsNumber; j++){
-		uint32_t word = *(array_32 + j);
-		*(array_8 + (j*4)) = word & 0x000000FF;
-		*(array_8 + (j*4) + 1) = (word & 0x0000FF00) >> 8;
-		*(array_8 + (j*4) + 2) = (word & 0x00FF0000) >> 16;
-		*(array_8 + (j*4) + 3) = (word & 0xFF000000) >> 24;
-	}
 
 
-/*
-	//====== MSB bytes orientation (wrong bytes sequence) =======
-	for(uint16_t j = 0; j < WordsNumber; j++){
-		uint32_t word = *(array_32 + j);
-		*(array_8 + (j*4) + 3) = word & 0x000000FF;
-		*(array_8 + (j*4) + 2) = (word & 0x0000FF00) >> 8;
-		*(array_8 + (j*4) + 1) = (word & 0x00FF0000) >> 16;
-		*(array_8 + (j*4)) = (word & 0xFF000000) >> 24;
-	}
-*/
-
-}
-
-
-void ConvertArray_B8_to_W32(uint8_t *array_8, uint32_t *array_32, uint16_t BytesNumber){
-	uint16_t WORDS_NUMBER = BytesNumber / 4; 
-
-	for (uint16_t m = 0; m < WORDS_NUMBER; m++){
-		
-		/* MSB bytes orientation (wrong bytes sequence)*/
-		 //*(array_32 + m) = (array_8[m*4] << 24) + 
-			//			(array_8[m*4 + 1] << 16) +
-			//			(array_8[m*4 + 2] << 8) +
-			//			(array_8[m*4 + 3]);
-		
-		
-		
-		/* LSB bytes orientation */	
-		*(array_32 + m) = (array_8[m*4]) + 
-						(array_8[m*4 + 1] << 8) +
-						(array_8[m*4 + 2] << 16) +
-						(array_8[m*4 + 3] << 24);
-		
-	}
-
-}
 
 
 /**
@@ -204,11 +156,9 @@ SD_Error SD_Init(void)
   SD_Error errorstatus = SD_OK;
 
   /* Configure SDIO interface GPIO */
-  //GPIO_Configuration();
   SDIO_GPIO_Init();
 
   /* Enable the SDIO AHB Clock */
-  //RCC_AHBPeriphClockCmd(RCC_AHBPeriph_SDIO, ENABLE);
   RCC->APB2ENR |= RCC_APB2ENR_SDIOEN;
 
 
@@ -247,6 +197,10 @@ SD_Error SD_Init(void)
 
   return(errorstatus);
 }
+
+
+
+
 
 /**
   * @brief  Enquires cards about their operating voltage and configures 
@@ -392,6 +346,10 @@ SD_Error SD_PowerON(void)
   return(errorstatus);
 }
 
+
+
+
+
 /**
   * @brief  Turns the SDIO output signals off.
   * @param  None
@@ -406,6 +364,10 @@ SD_Error SD_PowerOFF(void)
 
   return(errorstatus);
 }
+
+
+
+
 
 /**
   * @brief  Intialises all cards or single card as the case may be. 
@@ -495,6 +457,10 @@ SD_Error SD_InitializeCards(void)
 
   return(errorstatus);
 }
+
+
+
+
 
 /**
   * @brief  Returns information about specific card.
@@ -704,6 +670,10 @@ SD_Error SD_GetCardInfo(SD_CardInfo *cardinfo)
   return(errorstatus);
 }
 
+
+
+
+
 /**
   * @brief  Enables wide bus opeartion for the requeseted card if 
   *   supported by card.
@@ -768,6 +738,10 @@ SD_Error SD_EnableWideBusOperation(uint32_t WideMode)
   return(errorstatus);
 }
 
+
+
+
+
 /**
   * @brief  Sets device mode whether to operate in Polling, Interrupt or
   *   DMA mode.
@@ -794,6 +768,9 @@ SD_Error SD_SetDeviceMode(uint32_t Mode)
 
 }
 
+
+
+
 /**
   * @brief  Selects od Deselects the corresponding card.
   * @param  addr: Address of the Card to be selected.
@@ -818,37 +795,30 @@ SD_Error SD_SelectDeselect(uint32_t addr)
 
 
 
+
 SD_Error SD_ReadBlockBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t BlockSizeBytes){
 	
 	uint16_t WordsNumber = BlockSizeBytes / 4;
-	uint32_t readbuff[WordsNumber];
+	uint32_t *readbuff = readbuff_bytes;
 	SD_Error errorstatus = SD_OK;
-
 	errorstatus = SD_ReadBlock(addr, readbuff, BlockSizeBytes);
-	if(errorstatus == SD_OK){
-		ConvertArray_W32_to_B8(readbuff, readbuff_bytes, WordsNumber);
-	}
-
 	return errorstatus;
 }
+
 
 
 
 SD_Error SD_ReadMultiBlocksBytes(uint32_t addr, uint8_t *readbuff_bytes, uint16_t BlockSize, uint32_t NumberOfBlocks){
 	uint16_t WordsNumber = BlockSize / 4;
-	uint32_t readbuff[WordsNumber * NumberOfBlocks];
+	uint32_t *readbuff = readbuff_bytes;
 	SD_Error errorstatus = SD_OK;
-	
 	errorstatus = SD_ReadMultiBlocks(addr, readbuff, BlockSize, NumberOfBlocks);
-	
-	if(errorstatus == SD_OK){
-		ConvertArray_W32_to_B8(readbuff, readbuff_bytes, ( WordsNumber * NumberOfBlocks));
-	}
-
 	return errorstatus;
 
 
 }
+
+
 
 
 /**
@@ -1231,17 +1201,19 @@ SD_Error SD_ReadMultiBlocks(uint32_t addr, uint32_t *readbuff, uint16_t BlockSiz
 }
 
 
+
+
 SD_Error SD_WriteBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint16_t BlockSizeBytes){
 	SD_Error errorstatus = SD_OK;
-	uint32_t writebuff[BlockSizeBytes / 4];
-
-	ConvertArray_B8_to_W32(writebuff_bytes, writebuff, BlockSizeBytes);
+	uint32_t *writebuff = writebuff_bytes;
 	
 	errorstatus = SD_WriteBlock(addr, writebuff, BlockSizeBytes);
 
 	return errorstatus;
 
 }
+
+
 
 
 /**
@@ -1482,20 +1454,13 @@ SD_Error SD_WriteBlock(uint32_t addr, uint32_t *writebuff, uint16_t BlockSize)
 
 
 
-
-
 SD_Error SD_WriteMultiBlockBytes(uint32_t addr, const uint8_t *writebuff_bytes, uint16_t BlockSize, uint32_t NumberOfBlocks){
 	SD_Error errorstatus = SD_OK;
-	uint32_t writebuff[ (BlockSize * NumberOfBlocks) / 4 ];
+	uint32_t *writebuff = writebuff_bytes;
 	
-
-	ConvertArray_B8_to_W32(writebuff_bytes, writebuff, (BlockSize*NumberOfBlocks) );
-
 	errorstatus = SD_WriteMultiBlocks(addr, writebuff, BlockSize, NumberOfBlocks);
 	return errorstatus;
 }
-
-
 
 
 
@@ -1546,7 +1511,6 @@ SD_Error SD_WriteMultiBlocks(uint32_t addr, uint32_t *writebuff, uint16_t BlockS
   if (CardType == SDIO_HIGH_CAPACITY_SD_CARD)
   {
     BlockSize = 512;
-    //addr /= 512;
   }
   
   /* Set the block size, both on controller and card */
@@ -1773,6 +1737,9 @@ SD_Error SD_WriteMultiBlocks(uint32_t addr, uint32_t *writebuff, uint16_t BlockS
   return(errorstatus);
 }
 
+
+
+
 /**
   * @brief  Gets the cuurent data transfer state.
   * @param  None
@@ -1814,6 +1781,9 @@ SD_Error SD_StopTransfer(void)
 
   return(errorstatus);
 }
+
+
+
 
 /**
   * @brief  Allows to erase memory area specified for the given card.
@@ -2955,33 +2925,6 @@ static uint8_t convert_from_bytes_to_power_of_two(uint16_t NumberOfBytes)
 }
 
 
-/**
-  * @brief  Configures the SDIO Corresponding GPIO Ports
-  * @param  None
-  * @retval None
-  */
-static void GPIO_Configuration(void)
-{
-  GPIO_InitTypeDef  GPIO_InitStructure;
-
-  //GPIOC and GPIOD Periph clock enable 
-  //RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC | RCC_APB2Periph_GPIOD, ENABLE);
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
-  RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
-
-
-   //Configure PC.08, PC.09, PC.10, PC.11, PC.12 pin: D0, D1, D2, D3, CLK pin 
-  
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_12;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_Init(GPIOC, &GPIO_InitStructure);
-
-   //Configure PD.02 CMD line 
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
-  GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-}
 
 
 
@@ -3031,7 +2974,80 @@ void SDIO_GPIO_Init(void){
 
 
 
-// TODO: Rewrite DMA_TxConfiguration() for STM32F407 SDIO 
+// NOTE: DMA not used in POLLING MODE SD-card
+static void DMA_TxConfiguration(uint32_t *BufferSRC, uint32_t BufferSize)
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_EN);               // Выключение потока 0 
+	                                                   // 000: channel 0 selected
+	DMA2_Stream6->CR  |= DMA_SxCR_DIR_0;               // 10: Memory-to-peripheral
+	DMA2_Stream6->PAR  = (uint32_t)SDIO->FIFO;       // Адрес Peripheral IN
+	DMA2_Stream6->M0AR = (uint32_t)BufferSRC;          // Адрес памяти Memory OUT
+	DMA2_Stream6->CR |= (DMA_SxCR_CHSEL_2);				// 100: Channel 4 selected
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_PINC);             // Инкрементирование адреса памяти Peripheral IN ВЫКЛ
+	DMA2_Stream6->CR  |= DMA_SxCR_MINC;                // Инкрементирование адреса  памяти Memory OUT ВКЛ
+	DMA2_Stream6->CR  |= DMA_SxCR_PSIZE_1;            // Размер данных - WORD (32 bits)
+	DMA2_Stream6->CR  |= DMA_SxCR_MSIZE_1;            // Размер данных - WORD (32 bits)
+
+	DMA2_Stream6->NDTR = BufferSize / 4;            // Количество данных для передачи
+
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_DBM);               // 0: No buffer switching at the end of transfer
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_CIRC);           // 0: Circular mode disabled    
+	DMA2_Stream6->CR  |= DMA_SxCR_PL_1;                // Priority level 10: High
+	DMA2_Stream6->FCR |= DMA_SxFCR_DMDIS;              // 1: Direct mode disabled - Прямой режим ВЫКЛ
+	DMA2_Stream6->FCR |= DMA_SxFCR_FTH_0;              // Порог 01: 1/2 full FIFO
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_MBURST
+	                  | DMA_SxCR_PBURST);              // Одиночная, а не пакетная передача
+	                                                   //        00: single transfer
+														//OFF:
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_TCIE);             // Прерывание по завершению передачи
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_DMEIE);            // Direct mode error interrupt enable
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_TEIE);             // Transfer error interrupt enable
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_HTIE);             // Half transfer interrupt enable
+	DMA2_Stream6->CR  |= DMA_SxCR_EN;                  // Включение потока 0
+}
+
+
+
+// NOTE: DMA not used in POLLING MODE SD-card
+static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize)
+{
+	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_EN);               // Выключение потока 0 
+	                                                   // 000: channel 0 selected
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_DIR);              // 00: -peripheral-to-memory
+	DMA2_Stream6->PAR  = (uint32_t)SDIO_FIFO_Address;       // Адрес памяти Peripheral OUT
+	DMA2_Stream6->M0AR = (uint32_t)BufferDST;          // Адрес памяти Memory IN
+	DMA2_Stream6->CR |= (DMA_SxCR_CHSEL_2);     // 100: Channel 4 selected
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_PINC);             // Инкрементирование адреса памяти Peripheral IN ВЫКЛ
+	DMA2_Stream6->CR  |= DMA_SxCR_MINC;                // Инкрементирование адреса  памяти Memory OUT ВКЛ
+	DMA2_Stream6->CR  |= DMA_SxCR_PSIZE_1;            // Размер данных - WORD (32 bits)
+	DMA2_Stream6->CR  |= DMA_SxCR_MSIZE_1;            // Размер данных - WORD (32 bits)
+
+	DMA2_Stream6->NDTR = BufferSize / 4;            // Количество данных для передачи
+
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_DBM);               // 0: No buffer switching at the end of transfer
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_CIRC);           // 0: Circular mode disabled    
+	DMA2_Stream6->CR  |= DMA_SxCR_PL_1;                // Priority level 10: High
+	DMA2_Stream6->FCR |= DMA_SxFCR_DMDIS;              // 1: Direct mode disabled - Прямой режим ВЫКЛ
+	DMA2_Stream6->FCR |= DMA_SxFCR_FTH_0;              // Порог 01: 1/2 full FIFO
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_MBURST
+	                  | DMA_SxCR_PBURST);              // Одиночная, а не пакетная передача
+	                                                   //        00: single transfer
+														//OFF:
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_TCIE);             // Прерывание по завершению передачи
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_DMEIE);            // Direct mode error interrupt enable
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_TEIE);             // Transfer error interrupt enable
+	DMA2_Stream6->CR  &= ~(DMA_SxCR_HTIE);             // Half transfer interrupt enable
+	DMA2_Stream6->CR  |= DMA_SxCR_EN;                  // Включение потока 0
+}
+
+
+
+/********************************************/
+
+
+
 /**
   * @brief  Configures the DMA2_Stream6 Channel4 for SDIO Tx request.
   * @param  BufferSRC: pointer to the source buffer
@@ -3067,44 +3083,10 @@ void SDIO_GPIO_Init(void){
 }*/
 
 
-//void DMA2_Stream6_TX_Init(void) 
-static void DMA_TxConfiguration(uint32_t *BufferSRC, uint32_t BufferSize)
-{
-	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_EN);               // Выключение потока 0 
-	                                                   // 000: channel 0 selected
-	DMA2_Stream6->CR  |= DMA_SxCR_DIR_0;               // 10: Memory-to-peripheral
-	//DMA2_Stream6->PAR  = (uint32_t)SDIO_FIFO_Address;       // Адрес Peripheral IN
-	DMA2_Stream6->PAR  = (uint32_t)SDIO->FIFO;       // Адрес Peripheral IN
-	DMA2_Stream6->M0AR = (uint32_t)BufferSRC;          // Адрес памяти Memory OUT
-	//DMA2_Stream6->CR |= (4 << DMA_SxCR_CHSEL_Pos);     // 100: Channel 4 selected
-	DMA2_Stream6->CR |= (DMA_SxCR_CHSEL_2);				// 100: Channel 4 selected
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_PINC);             // Инкрементирование адреса памяти Peripheral IN ВЫКЛ
-	DMA2_Stream6->CR  |= DMA_SxCR_MINC;                // Инкрементирование адреса  памяти Memory OUT ВКЛ
-	DMA2_Stream6->CR  |= DMA_SxCR_PSIZE_1;            // Размер данных - WORD (32 bits)
-	DMA2_Stream6->CR  |= DMA_SxCR_MSIZE_1;            // Размер данных - WORD (32 bits)
-
-	DMA2_Stream6->NDTR = BufferSize / 4;            // Количество данных для передачи
-
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_DBM);               // 0: No buffer switching at the end of transfer
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_CIRC);           // 0: Circular mode disabled    
-	DMA2_Stream6->CR  |= DMA_SxCR_PL_1;                // Priority level 10: High
-	DMA2_Stream6->FCR |= DMA_SxFCR_DMDIS;              // 1: Direct mode disabled - Прямой режим ВЫКЛ
-	DMA2_Stream6->FCR |= DMA_SxFCR_FTH_0;              // Порог 01: 1/2 full FIFO
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_MBURST
-	                  | DMA_SxCR_PBURST);              // Одиночная, а не пакетная передача
-	                                                   //        00: single transfer
-														//OFF:
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_TCIE);             // Прерывание по завершению передачи
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_DMEIE);            // Direct mode error interrupt enable
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_TEIE);             // Transfer error interrupt enable
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_HTIE);             // Half transfer interrupt enable
-	DMA2_Stream6->CR  |= DMA_SxCR_EN;                  // Включение потока 0
-}
 
 
 
-// TODO: Rewrite DMA_RxConfiguration() for STM32F407 SDIO 
+
 /**
   * @brief  Configures the DMA2_Stream6 Channel4 for SDIO Rx request.
   * @param  BufferDST: pointer to the destination buffer
@@ -3141,38 +3123,35 @@ static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize)
 
 */
 
-static void DMA_RxConfiguration(uint32_t *BufferDST, uint32_t BufferSize)
+
+/**
+  * @brief  Configures the SDIO Corresponding GPIO Ports
+  * @param  None
+  * @retval None
+  */
+/*
+static void GPIO_Configuration(void)
 {
-	RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_EN);               // Выключение потока 0 
-	                                                   // 000: channel 0 selected
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_DIR);              // 00: -peripheral-to-memory
-	DMA2_Stream6->PAR  = (uint32_t)SDIO_FIFO_Address;       // Адрес памяти Peripheral OUT
-	DMA2_Stream6->M0AR = (uint32_t)BufferDST;          // Адрес памяти Memory IN
-	//DMA2_Stream6->CR |= (4 << DMA_SxCR_CHSEL_Pos);     // 100: Channel 4 selected
-	DMA2_Stream6->CR |= (DMA_SxCR_CHSEL_2);     // 100: Channel 4 selected
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_PINC);             // Инкрементирование адреса памяти Peripheral IN ВЫКЛ
-	DMA2_Stream6->CR  |= DMA_SxCR_MINC;                // Инкрементирование адреса  памяти Memory OUT ВКЛ
-	DMA2_Stream6->CR  |= DMA_SxCR_PSIZE_1;            // Размер данных - WORD (32 bits)
-	DMA2_Stream6->CR  |= DMA_SxCR_MSIZE_1;            // Размер данных - WORD (32 bits)
+  GPIO_InitTypeDef  GPIO_InitStructure;
 
-	DMA2_Stream6->NDTR = BufferSize / 4;            // Количество данных для передачи
+  //GPIOC and GPIOD Periph clock enable 
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+  RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
 
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_DBM);               // 0: No buffer switching at the end of transfer
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_CIRC);           // 0: Circular mode disabled    
-	DMA2_Stream6->CR  |= DMA_SxCR_PL_1;                // Priority level 10: High
-	DMA2_Stream6->FCR |= DMA_SxFCR_DMDIS;              // 1: Direct mode disabled - Прямой режим ВЫКЛ
-	DMA2_Stream6->FCR |= DMA_SxFCR_FTH_0;              // Порог 01: 1/2 full FIFO
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_MBURST
-	                  | DMA_SxCR_PBURST);              // Одиночная, а не пакетная передача
-	                                                   //        00: single transfer
-														//OFF:
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_TCIE);             // Прерывание по завершению передачи
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_DMEIE);            // Direct mode error interrupt enable
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_TEIE);             // Transfer error interrupt enable
-	DMA2_Stream6->CR  &= ~(DMA_SxCR_HTIE);             // Half transfer interrupt enable
-	DMA2_Stream6->CR  |= DMA_SxCR_EN;                  // Включение потока 0
+
+   //Configure PC.08, PC.09, PC.10, PC.11, PC.12 pin: D0, D1, D2, D3, CLK pin 
+  
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_12;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_Init(GPIOC, &GPIO_InitStructure);
+
+   //Configure PD.02 CMD line 
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_2;
+  GPIO_Init(GPIOD, &GPIO_InitStructure);
+
 }
 
+*/
 
 /********END OF FILE*********/
