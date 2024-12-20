@@ -5,10 +5,7 @@
 
 /*******************************************************************/
 #define BUFFER_SIZE_BYTES		(uint16_t)2048 
-
-#define READED_BYTES			(uint16_t)512
 #define START_SECTOR_NUM		(uint32_t)4		// потому что в секторах 0-3 хранится разметка FAT32
-#define SECTORS_QUANTITY		(uint16_t)2
 
 uint8_t readData_8[BUFFER_SIZE_BYTES];
 uint8_t writeBuffer_bytes[BUFFER_SIZE_BYTES];
@@ -52,17 +49,26 @@ int main()
     	SD_SetDeviceMode(SD_POLLING_MODE);
     	
 		printf("----- SD-card Block %d bytes writing! ---- \n", BUFFER_SIZE_BYTES);
-    	// запись блока данных
-		disk_write(0, writeBuffer_bytes, START_SECTOR_NUM, SECTORS_QUANTITY); 
+
+    	// запись блока данных. начиная с сектора START_SECTOR_NUM. Пишется один сектор данных.
+		SD_ErrorState = SD_WriteBlockBytes(START_SECTOR_NUM, writeBuffer_bytes, SD_BLOCK_SIZE_BYTES);
 		
-		
-		printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE_BYTES);
-		// чтение блока данных
-		disk_read(0, readData_8, 65544, 4);
+		if(SD_ErrorState == SD_OK){
+			printf("----- SD-card Block %d bytes reading! ---- \n", BUFFER_SIZE_BYTES);
+
+			// чтение данных. Начиная с сектора № 65544, чтение 4-х секторов подряд
+			SD_ErrorState = SD_ReadMultiBlocksBytes(65544, readData_8, SD_BLOCK_SIZE_BYTES, 4);
+			
+			// отправка считанного текста в USART1
+			if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE_BYTES);
+			else printf("----- SD-card reading error! ----- \n");
+		}
+		else{
+			printf("----- Error SD-card writing FAILED \n");
+		}
 
 		
-		if(SD_ErrorState == SD_OK) usart1_send(readData_8, BUFFER_SIZE_BYTES);
-		else printf("----- SD-card reading error! ----- \n");
+		
 	}
 	else{
 		printf("----- SD-card not found!! ---- \n");

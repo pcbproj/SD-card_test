@@ -67,16 +67,6 @@
       </file>
     </folder>
     <folder Name="lib">
-      <folder Name="fatfs">
-        <file file_name="lib/fatfs/diskio.c" />
-        <file file_name="lib/fatfs/diskio.h" />
-        <file file_name="lib/fatfs/ff.c" />
-        <file file_name="lib/fatfs/ff.h" />
-        <file file_name="lib/fatfs/ffconf.h" />
-        <file file_name="lib/fatfs/ffsystem.c" />
-        <file file_name="lib/fatfs/ffunicode.c" />
-        <file file_name="lib/fatfs/integer.h" />
-      </folder>
       <folder Name="inc">
         <file file_name="lib/inc/delay.h" />
         <file file_name="lib/inc/gpio.h" />
